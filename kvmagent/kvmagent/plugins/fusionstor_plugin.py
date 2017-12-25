@@ -39,7 +39,7 @@ def kill_vm(maxAttempts):
         if not vm_uuid:
             continue
 
-        vm_pid = shell.call("ps aux | grep '/opt/fusionstack/qemu/bin/qemu-system-x86_64' | grep -v 'grep' | awk '/%s/{print $2}'" % vm_uuid)
+        vm_pid = shell.call("ps aux | grep '%s' | grep -v 'grep' | awk '/%s/{print $2}'" % (lichbdfactory.get_lichbd_version_class().get_qemu_path(), vm_uuid))
         vm_pid = vm_pid.strip(' \t\n\r')
         kill = shell.ShellCmd('kill -9 %s' % vm_pid)
         kill(False)
@@ -77,8 +77,8 @@ class FusionstorPlugin(kvmagent.KvmAgent):
 
                     mon_url = '\;'.join(cmd.monUrls)
                     mon_url = mon_url.replace(':', '\\\:')
-                    create = shell.ShellCmd('timeout %s %s %s -s 1b -p nbd' %
-                                                (cmd.storageCheckerTimeout,lichbdfactory.get_lichbd_version_class().LICHBD_CMD_VOL_CREATE, cmd.heartbeatImagePath))
+                    create = shell.ShellCmd('timeout %s %s' %
+                                                (cmd.storageCheckerTimeout,lichbdfactory.get_lichbd_version_class().get_vol_create_cmd(cmd.heartbeatImagePath, '1Mi', 'nbd').replace('2>/dev/null', '')))
                     create(False)
 
                     read_heart_beat_file = False
@@ -92,8 +92,8 @@ class FusionstorPlugin(kvmagent.KvmAgent):
                         logger.warn('cannot create heartbeat image; %s' % create.stderr)
 
                     if read_heart_beat_file:
-                        touch = shell.ShellCmd('timeout %s qemu-img info nbd:unix:/tmp/nbd-socket:exportname=%s' %
-                                               (cmd.storageCheckerTimeout, cmd.heartbeatImagePath))
+                        touch = shell.ShellCmd('timeout %s qemu-img info nbd:unix:/tmp/nbd-socket:exportname=%s%s' %
+                                               (cmd.storageCheckerTimeout, lichbdfactory.get_lichbd_version_class().get_pool_path(), cmd.heartbeatImagePath))
                         touch(False)
 
                         if touch.return_code == 0:
@@ -127,7 +127,7 @@ class FusionstorPlugin(kvmagent.KvmAgent):
                 while True:
                     time.sleep(cmd.interval)
 
-                    touch = shell.ShellCmd('timeout %s touch %s; exit $?' % (cmd.storageCheckerTimeout, heartbeat_file_path))
+                    touch = shell.ShellCmd('timeout %s touch %s%s; exit $?' % (cmd.storageCheckerTimeout, lichbdfactory.get_lichbd_version_class().get_pool_path(), heartbeat_file_path))
                     touch(False)
                     if touch.return_code == 0:
                         failure = 0

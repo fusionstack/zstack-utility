@@ -174,7 +174,7 @@ class FusionstorAgent(object):
             shellcmd = lichbd.lichbd_file_info(testImagePath)
             if shellcmd.return_code == errno.ENOENT:
                 try:
-                    lichbd.lichbd_create_raw(testImagePath, '1b')
+                    lichbd.lichbd_create_raw(testImagePath, '1Mi')
                 except Exception, e:
                     rsp.success = False
                     rsp.operationFailure = True
@@ -218,7 +218,7 @@ class FusionstorAgent(object):
 
         rsp = AgentResponse()
 
-        if (len(afters) > 0):
+        if not lichbd.is_support_snap_tree() and len(afters) > 0:
             afters.reverse()
             rsp.success = False
             rsp.error = 'If you want to rollback the current snapshot, please delete all the later snapshots manually.[%s]' % (afters)
@@ -382,7 +382,7 @@ class FusionstorAgent(object):
 
         path = self._normalize_install_path(cmd.installPath)
         size_M = sizeunit.Byte.toMegaByte(cmd.size) + 1
-        size = "%dM" % (size_M)
+        size = "%dMi" % (size_M)
 
         _pool = os.path.dirname(path)
         if not lichbd.lichbd_pool_exist(_pool):

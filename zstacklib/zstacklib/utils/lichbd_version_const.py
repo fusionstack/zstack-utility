@@ -1,5 +1,6 @@
 class LichbdVersionConst(object):
     LICHBD_VERSION_Q4_2016 = 375
+    LICHBD_VERSION_Q4_2017 = 403
     def __init__(self):
         super(LichbdVersionConst, self).__init__()
 class ConstError(TypeError):pass

@@ -177,7 +177,7 @@ class FusionstorAgent(object):
 
         if cmd.url.startswith('http://') or cmd.url.startswith('https://'):
             cmd.url = linux.shellquote(cmd.url)
-            shell.call('set -o pipefail; wget --no-check-certificate -q -O - %s | %s - %s -p %s' % (cmd.url,lichbdfactory.get_lichbd_version_class().LICHBD_CMD_VOL_IMPORT, tmp_lichbd_file, protocol))
+            shell.call('set -o pipefail; wget --no-check-certificate -q -O - %s | %s' % (cmd.url,lichbdfactory.get_lichbd_version_class().get_vol_import_to_stdin_cmd(tmp_lichbd_file, protocol)))
             actual_size = linux.get_file_size_by_http_head(cmd.url)
         elif cmd.url.startswith('file://'):
             src_path = cmd.url.lstrip('file:')
@@ -217,7 +217,7 @@ class FusionstorAgent(object):
             shellcmd = lichbd.lichbd_file_info(testImagePath)
             if shellcmd.return_code == errno.ENOENT:
                 try:
-                    lichbd.lichbd_create_raw(testImagePath, '1b')
+                    lichbd.lichbd_create_raw(testImagePath, '1Mi')
                 except Exception, e:
                     rsp.success = False
                     rsp.operationFailure = True
