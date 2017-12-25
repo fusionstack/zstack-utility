@@ -780,6 +780,8 @@ class IsoFusionstor(object):
             pass
         else:
             raise shell.ShellError('Do not supprot protocols, only supprot lichbd, sheepdog and nbd')
+        # pool_path may be empty
+        path = lichbd.lichbd_get_pool_path() + path
 
         disk = etree.Element('disk', {'type': 'network', 'device': 'cdrom'})
         source = e(disk, 'source', None, {'name': path, 'protocol': protocol})
@@ -811,6 +813,9 @@ class IdeFusionstor(object):
         path = self.volume.installPath.lstrip('fusionstor:').lstrip('//')
         file_format = lichbd.lichbd_get_format(path)
 
+        # pool_path may be empty
+        path = lichbd.lichbd_get_pool_path() + path
+
         disk = etree.Element('disk', {'type': 'network', 'device': 'disk'})
         source = e(disk, 'source', None, {'name': path, 'protocol': protocol})
         if protocol == 'sheepdog':
@@ -839,6 +844,9 @@ class VirtioFusionstor(object):
         path = self.volume.installPath.lstrip('fusionstor:').lstrip('//')
         file_format = lichbd.lichbd_get_format(path)
 
+        # pool_path may be empty
+        path = lichbd.lichbd_get_pool_path() + path
+
         disk = etree.Element('disk', {'type': 'network', 'device': 'disk'})
         source = e(disk, 'source', None, {'name': path, 'protocol': protocol})
         if protocol == 'sheepdog':
@@ -866,6 +874,9 @@ class VirtioSCSIFusionstor(object):
 
         path = self.volume.installPath.lstrip('fusionstor:').lstrip('//')
         file_format = lichbd.lichbd_get_format(path)
+
+        # pool_path may be empty
+        path = lichbd.lichbd_get_pool_path() + path
 
         disk = etree.Element('disk', {'type': 'network', 'device': 'disk'})
         source = e(disk, 'source', None, {'name': path, 'protocol': protocol})
@@ -1573,8 +1584,10 @@ class Vm(object):
                                                      'source') and disk.source.name__ and disk.source.name_ in volume.installPath:
                                 return True
                         elif volume.deviceType == 'fusionstor':
+                            # pool_path may be empty
+                            path = lichbd.lichbd_get_pool_path() + path
                             if xmlobject.has_element(disk,
-                                                     'source') and disk.source.name__ and disk.source.name_ in volume.installPath:
+                                                     'source') and disk.source.name__ and disk.source.name_ in path:
                                 return True
 
                     logger.debug('volume[%s] is still in process of attaching, wait it' % volume.installPath)
@@ -1673,8 +1686,10 @@ class Vm(object):
                                     'volume[%s] is still in process of detaching, wait for it' % volume.installPath)
                                 return False
                         elif volume.deviceType == 'fusionstor':
+                            # pool_path may be empty
+                            path = lichbd.lichbd_get_pool_path() + path
                             if xmlobject.has_element(disk,
-                                                     'source') and disk.source.name__ and disk.source.name_ in volume.installPath:
+                                                     'source') and disk.source.name__ and disk.source.name_ in path:
                                 logger.debug(
                                     'volume[%s] is still in process of detaching, wait for it' % volume.installPath)
                                 return False
@@ -2341,10 +2356,11 @@ class Vm(object):
         def make_devices():
             root = elements['root']
             devices = e(root, 'devices')
-            if cmd.addons and cmd.addons['qemuPath']:
-                e(devices, 'emulator', cmd.addons['qemuPath'])
-            else:
-                e(devices, 'emulator', kvmagent.get_qemu_path())
+            #if cmd.addons and cmd.addons['qemuPath']:
+            #    e(devices, 'emulator', cmd.addons['qemuPath'])
+            #else:
+            #    e(devices, 'emulator', kvmagent.get_qemu_path())
+            e(devices, 'emulator', lichbd.lichbd_get_qemu_path())
             tablet = e(devices, 'input', None, {'type': 'tablet', 'bus': 'usb'})
             e(tablet, 'address', None, {'type':'usb', 'bus':'0', 'port':'1'})
             elements['devices'] = devices
