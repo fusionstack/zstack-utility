@@ -9,6 +9,7 @@ import socket
 import time
 import subprocess
 import zstacklib.utils.shell as shell
+import zstacklib.utils.lichbd_factory as lichbdfactory
 from zstacklib.utils import log
 
 logcmd = True
@@ -164,12 +165,10 @@ def lichbd_get_iqn():
     return iqn
 
 def lichbd_get_qemu_path():
-    qemu_path = "/opt/fusionstack/qemu/bin/qemu-system-x86_64"
-    return qemu_path 
+    return lichbdfactory.get_lichbd_version_class().get_qemu_path()
 
 def lichbd_get_qemu_img_path():
-    qemu_path = "/opt/fusionstack/qemu/bin/qemu-img"
-    return qemu_path
+    return lichbdfactory.get_lichbd_version_class().get_qemu_img_path()
 
 def lichbd_get_iscsiport():
     shellcmd = call_try("""lich configdump 2>/dev/null|grep iscsi.port|awk -F":" '{print $2}'""")
@@ -181,7 +180,7 @@ def lichbd_get_iscsiport():
 
 def lichbd_mkpool(path):
     protocol = get_protocol()
-    shellcmd = call_try('lichbd mkpool %s -p %s 2>/dev/null' % (path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_pool_create_cmd(path, protocol))
     if shellcmd.return_code != 0:
         if shellcmd.return_code == errno.EEXIST:
             pass
@@ -190,7 +189,7 @@ def lichbd_mkpool(path):
 
 def lichbd_lspools():
     protocol = get_protocol()
-    shellcmd = call_try('lichbd lspools -p %s 2>/dev/null' % protocol)
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_pool_ls_cmd(protocol))
     if shellcmd.return_code != 0:
         if shellcmd.return_code == errno.EEXIST:
             pass
@@ -201,7 +200,7 @@ def lichbd_lspools():
 
 def lichbd_rmpool(path):
     protocol = get_protocol()
-    shellcmd = call_try('lichbd rmpool %s -p %s 2>/dev/null' % (path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_pool_rm_cmd(path, protocol))
     if shellcmd.return_code != 0:
         if shellcmd.return_code == errno.EEXIST:
             pass
@@ -210,7 +209,7 @@ def lichbd_rmpool(path):
 
 def lichbd_create(path, size):
     protocol = get_protocol()
-    shellcmd = call_try('lichbd create %s --size %s -p %s 2>/dev/null' % (path, size, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_vol_create_cmd(path, size, protocol))
     if shellcmd.return_code != 0:
         if shellcmd.return_code == errno.EEXIST:
             pass
@@ -223,7 +222,7 @@ def lichbd_create_raw(path, size):
 def lichbd_copy(src_path, dst_path):
     shellcmd = None
     protocol = get_protocol()
-    shellcmd = call_try('lichbd copy %s %s -p %s 2>/dev/null' % (src_path, dst_path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_vol_copy_cmd(src_path, dst_path, protocol))
     if shellcmd.return_code == 0:
         return shellcmd
     else:
@@ -237,7 +236,7 @@ def lichbd_copy(src_path, dst_path):
 def lichbd_import(src_path, dst_path):
     shellcmd = None
     protocol = get_protocol()
-    shellcmd = call_try('lichbd import %s %s -p %s 2>/dev/null' % (src_path, dst_path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_vol_import_cmd(src_path, dst_path, protocol))
     if shellcmd.return_code == 0:
         return shellcmd
     else:
@@ -248,7 +247,7 @@ def lichbd_import(src_path, dst_path):
 def lichbd_export(src_path, dst_path):
     shellcmd = None
     protocol = get_protocol()
-    shellcmd = call_try('lichbd export %s %s -p %s 2>/dev/null' % (src_path, dst_path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_vol_export_cmd(src_path, dst_path, protocol))
     if shellcmd.return_code == 0:
         return shellcmd
     else:
@@ -258,7 +257,7 @@ def lichbd_export(src_path, dst_path):
 
 def lichbd_rm(path):
     protocol = get_protocol()
-    shellcmd = call_try('lichbd rm %s -p %s 2>/dev/null' % (path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_vol_rm_cmd(path, protocol))
     if shellcmd.return_code != 0:
         if shellcmd.return_code == errno.ENOENT:
             pass
@@ -267,7 +266,7 @@ def lichbd_rm(path):
 
 def lichbd_mv(dist, src):
     protocol = get_protocol()
-    shellcmd = call_try('lichbd mv %s %s -p %s 2>/dev/null' % (src, dist, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_vol_mv_cmd(src, dist, protocol))
     if shellcmd.return_code != 0:
         if shellcmd.return_code == errno.EEXIST:
             pass
@@ -276,13 +275,13 @@ def lichbd_mv(dist, src):
 
 def lichbd_file_info(path):
     protocol = get_protocol()
-    shellcmd = call_try("lichbd info %s -p %s" % (path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_vol_info_cmd(path, protocol))
 
     return shellcmd
 
 def lichbd_file_size(path):
     protocol = get_protocol()
-    shellcmd = call_try("lichbd info %s -p %s 2>/dev/null | grep chknum | awk '{print $3}'" % (path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_vol_info_cmd(path, protocol)+" | grep chknum | awk '{print $3}'")
     if shellcmd.return_code != 0:
         raise_exp(shellcmd)
 
@@ -291,7 +290,7 @@ def lichbd_file_size(path):
 
 def lichbd_file_actual_size(path):
     protocol = get_protocol()
-    shellcmd = call_try("lichbd info %s -p %s 2>/dev/null | grep localized | awk '{print $3}'" % (path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_vol_info_cmd(path, protocol)+" | grep localized | awk '{print $3}'")
     if shellcmd.return_code != 0:
         raise_exp(shellcmd)
 
@@ -300,7 +299,7 @@ def lichbd_file_actual_size(path):
 
 def lichbd_file_exist(path):
     protocol = get_protocol()
-    shellcmd = call_try("lichbd info %s -p %s" % (path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_vol_info_cmd(path, protocol))
     if shellcmd.return_code != 0:
         if shellcmd.return_code == 2:
             return False
@@ -322,40 +321,17 @@ def lichbd_pool_exist(path):
     return True
 
 def lichbd_cluster_stat():
-    shellcmd = call_try('lich stat --human-unreadable 2>/dev/null')
-    if shellcmd.return_code != 0:
-        raise_exp(shellcmd)
-
-    return shellcmd.stdout
+    return lichbdfactory.get_lichbd_version_class().lichbd_cluster_stat()
 
 def lichbd_get_used():
-    o = lichbd_cluster_stat()
-    for l in o.split("\n"):
-        if 'used:' in l:
-            used = long(l.split("used:")[-1])
-            return used
-
-    raise shell.ShellError('lichbd_get_used')
+    return lichbdfactory.get_lichbd_version_class().lichbd_get_used()
 
 def lichbd_get_capacity():
-    try:
-        o = lichbd_cluster_stat()
-    except Exception, e:
-        raise shell.ShellError('lichbd_get_capacity')
-
-    total = 0
-    used = 0
-    for l in o.split("\n"):
-        if 'capacity:' in l:
-            total = long(l.split("capacity:")[-1])
-        elif 'used:' in l:
-            used = long(l.split("used:")[-1])
-
-    return total, used
+    return lichbdfactory.get_lichbd_version_class().lichbd_get_capacity()
 
 def lichbd_snap_create(snap_path):
     protocol = get_protocol()
-    shellcmd = call_try('lichbd snap create %s -p %s' % (snap_path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_snap_create_cmd(snap_path, protocol))
     if shellcmd.return_code != 0:
         raise_exp(shellcmd)
 
@@ -364,7 +340,7 @@ def lichbd_snap_create(snap_path):
 def lichbd_snap_list(image_path):
     snaps = []
     protocol = get_protocol()
-    shellcmd = call_try('lichbd snap ls %s -p %s 2>/dev/null' % (image_path, protocol))
+    shellcmd = call_try(lichbdfactory.get_lichbd_version_class().get_snap_ls_cmd(image_path, protocol))
     if shellcmd.return_code != 0:
         raise_exp(shellcmd)
 
@@ -375,7 +351,7 @@ def lichbd_snap_list(image_path):
 
 def lichbd_snap_delete(snap_path):
     protocol = get_protocol()
-    cmd = 'lichbd snap remove %s -p %s' % (snap_path, protocol)
+    cmd = lichbdfactory.get_lichbd_version_class().get_snap_rm_cmd(snap_path, protocol)
     shellcmd = call_try(cmd)
 
     if shellcmd.return_code != 0:
@@ -385,7 +361,7 @@ def lichbd_snap_delete(snap_path):
  
 def lichbd_snap_clone(src, dst):
     protocol = get_protocol()
-    cmd = 'lichbd clone %s %s -p %s' % (src, dst, protocol)
+    cmd = lichbdfactory.get_lichbd_version_class().get_snap_clone_cmd(src, dst, protocol)
     shellcmd = call_try(cmd)
 
     if shellcmd.return_code != 0:
@@ -395,7 +371,7 @@ def lichbd_snap_clone(src, dst):
 
 def lichbd_snap_rollback(snap_path):
     protocol = get_protocol()
-    cmd = 'lichbd snap rollback %s -p %s' % (snap_path, protocol)
+    cmd = lichbdfactory.get_lichbd_version_class().get_snap_rollback_cmd(snap_path, protocol)
     shellcmd = call_try(cmd)
 
     if shellcmd.return_code != 0:
@@ -405,7 +381,7 @@ def lichbd_snap_rollback(snap_path):
 
 def lichbd_snap_protect(snap_path):
     protocol = get_protocol()
-    cmd = 'lichbd snap protect %s -p %s' % (snap_path, protocol)
+    cmd = lichbdfactory.get_lichbd_version_class().get_snap_protect_cmd(snap_path, protocol)
     shellcmd = call_try(cmd)
 
     if shellcmd.return_code != 0:
@@ -415,7 +391,7 @@ def lichbd_snap_protect(snap_path):
 
 def lichbd_snap_unprotect(snap_path):
     protocol = get_protocol()
-    cmd = 'lichbd snap unprotect %s -p %s' % (snap_path, protocol)
+    cmd = lichbdfactory.get_lichbd_version_class().get_snap_unprotect_cmd(snap_path, protocol)
     shellcmd = call_try(cmd)
 
     if shellcmd.return_code != 0:
@@ -435,6 +411,8 @@ def lichbd_get_format(path):
     elif protocol == 'sheepdog':
         cmd = "set -o pipefail;qemu-img info sheepdog+unix:///%s?socket=/tmp/sheepdog.socket 2>/dev/null | grep 'file format' | cut -d ':' -f 2" % path
     elif protocol == 'nbd':
+        #pool_path may be empty
+        path = lichbd_get_pool_path() + path
         cmd = "set -o pipefail;qemu-img info nbd:unix:/tmp/nbd-socket:exportname=%s 2>/dev/null | grep 'file format' | cut -d ':' -f 2" % path
     else:
         raise shell.ShellError('Do not supprot protocols, only supprot lichbd and sheepdog')
@@ -515,3 +493,9 @@ def makesure_qemu_img_with_lichbd():
 
         mv_cmd = "mv %s.tmp %s -f" % (_system, _system)
         shell.call(mv_cmd)
+
+def lichbd_get_pool_path():
+    return lichbdfactory.get_lichbd_version_class().get_pool_path()
+
+def is_support_snap_tree():
+    return lichbdfactory.get_lichbd_version_class().is_support_snap_tree()
