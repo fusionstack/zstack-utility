@@ -51,7 +51,7 @@ class LichbdVersionBase(object):
         return '%s %s %s -p %s 2>/dev/null'% (self.LICHBD_CMD_VOL_IMPORT, src_path, dst_path, protocol)
 
     def get_vol_import_to_stdin_cmd(self, dst_path=None, protocol=None):
-        return '%s - %s%s -p %s' % (self.LICHBD_CMD_VOL_IMPORT, self.POOL_PATH, dst_path, protocol)
+        return '%s - %s -p %s' % (self.LICHBD_CMD_VOL_IMPORT, dst_path, protocol)
 
     def get_vol_export_cmd(self, src_path=None, dst_path=None, protocol=None):
         return '%s %s %s -p %s 2>/dev/null'% (self.LICHBD_CMD_VOL_EXPORT, src_path, dst_path, protocol)
